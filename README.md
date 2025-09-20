@@ -1,6 +1,6 @@
 # DevOps Class - Getting Started
 
-Welcome to the DevOps course! 🚀  
+Welcome to the DevOps course! 
 This course will guide you through the core practices of DevOps, including **continuous integration (CI), continuous deployment (CD), infrastructure automation, containerization, and monitoring**. By the end of this class, you'll be able to build automated pipelines, manage cloud deployments, and ensure high-quality software delivery.
 
 ---
@@ -11,7 +11,7 @@ Before we start, make sure to install all the required tools listed in the [Prer
 
 ---
 
-## 🌐 Accounts You Need
+##  Accounts You Need
 
 To get the most out of this course, make sure you have the following accounts:
 
