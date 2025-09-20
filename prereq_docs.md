@@ -35,7 +35,7 @@ choco install virtualbox
 ######choco install virtualbox --version=7.0.10 -y
 
 ```
-choco install vagrant --version=2.3.7 -y
+choco install vagrant  -y
 ```
 ##### choco install vagrant
 
