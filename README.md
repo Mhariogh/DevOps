@@ -33,7 +33,7 @@ A comprehensive guide to master Terraform from installation to advanced producti
 ```powershell
 # Install Chocolatey if you haven't already (Run PowerShell as Administrator)
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
+```
 # Install Terraform
 choco install terraform
 
