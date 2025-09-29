@@ -34,19 +34,27 @@ A comprehensive guide to master Terraform from installation to advanced producti
 # Install Chocolatey if you haven't already (Run PowerShell as Administrator)
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 ```
-# Install Terraform
+##### Install Terraform
+```
 choco install terraform
+```
 
-# Verify installation
+##### Verify installation
+```
 terraform version
+```
 
 #### macOS (using Homebrew)
 # Install Homebrew if you haven't already
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Install Terraform
+##### Install Terraform
+```
 brew tap hashicorp/tap
+```
+```
 brew install hashicorp/tap/terraform
+```
 
 # Verify installation
 terraform version
