@@ -45,8 +45,9 @@ terraform version
 ```
 
 #### macOS (using Homebrew)
-# Install Homebrew if you haven't already
 ```
+# Install Homebrew if you haven't already
+
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 ##### Install Terraform
@@ -73,6 +74,27 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://
 sudo apt update && sudo apt install terraform
 ```
 
+### Step 2: Install and Configure VS Code
 
+#### Download and Install VS Code
+
+```
+# Windows: Open powershell as administrative user
+choco install vscode -y
+```
+
+
+Install Terraform Extension
+
+###### Open VS Code
+Press Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac)
+Search for "HashiCorp Terraform"
+Click Install on the official HashiCorp extension
+
+
+Configure VS Code Settings
+
+Press Ctrl+, (Windows/Linux) or Cmd+, (Mac) to open settings, then click the "Open Settings (JSON)" icon in the top right.
+Add these settings:
 
 
