@@ -87,14 +87,34 @@ choco install vscode -y
 Install Terraform Extension
 
 ###### Open VS Code
-Press Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac)
-Search for "HashiCorp Terraform"
-Click Install on the official HashiCorp extension
+- Press Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac)
+- Search for "HashiCorp Terraform"
+- Click Install on the official HashiCorp extension
 
 
 Configure VS Code Settings
 
-Press Ctrl+, (Windows/Linux) or Cmd+, (Mac) to open settings, then click the "Open Settings (JSON)" icon in the top right.
-Add these settings:
+- Press Ctrl+, (Windows/Linux) or Cmd+, (Mac) to open settings, 
+- Then click the "Open Settings (JSON)" icon in the top right.
+- Add these settings:
+```
+{
+  "terraform.languageServer.enable": true,
+  "terraform.experimentalFeatures.validateOnSave": true,
+  "terraform.experimentalFeatures.prefillRequiredFields": true,
+  "editor.formatOnSave": true,
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.formatAll.terraform": true
+    }
+  },
+  "[terraform-vars]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true
+  }
 
+  ```
+}
 
