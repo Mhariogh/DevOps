@@ -64,6 +64,10 @@ vagrant box list
 ```
 vagrant status
 ```
+To know where where vagrant box is on the machine:
+```
+vagrant global-status
+```
 To login to the VM, issue the vagrant ssh command below:
 ```
 vagrant ssh
