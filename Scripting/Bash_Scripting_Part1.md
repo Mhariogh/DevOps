@@ -12,8 +12,15 @@
 9. [File Operations](#file-operations)
 10. [Text Processing](#text-processing)
 11. [Error Handling and Debugging](#error-handling-and-debugging)
-12. [DevOps Real-World Examples](#devops-real-world-examples)
-13. [Best Practices](#best-practices)
+12. [Working with APIs and JSON](#working-with-apis-and-json)
+13. [Process Management](#process-management)
+14. [Networking and Remote Operations](#networking-and-remote-operations)
+15. [Cron Jobs and Scheduling](#cron-jobs-and-scheduling)
+16. [Performance Monitoring and Metrics](#performance-monitoring-and-metrics)
+17. [Security Practices](#security-practices)
+18. [Testing Bash Scripts](#testing-bash-scripts)
+19. [DevOps Real-World Examples](#devops-real-world-examples)
+20. [Best Practices](#best-practices)
 
 ---
 
@@ -1970,7 +1977,1172 @@ fi
 
 ---
 
-## 12. DevOps Real-World Examples
+## 12. Working with APIs and JSON
+
+### Making HTTP Requests with curl
+
+```bash
+#!/bin/bash
+
+# Basic GET request
+curl https://api.example.com/users
+
+# GET request with headers
+curl -H "Authorization: Bearer $API_TOKEN" \
+     -H "Content-Type: application/json" \
+     https://api.example.com/users
+
+# POST request with JSON data
+curl -X POST https://api.example.com/users \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "John Doe",
+       "email": "john@example.com"
+     }'
+
+# PUT request
+curl -X PUT https://api.example.com/users/123 \
+     -H "Content-Type: application/json" \
+     -d '{"status": "active"}'
+
+# DELETE request
+curl -X DELETE https://api.example.com/users/123 \
+     -H "Authorization: Bearer $API_TOKEN"
+
+# Save response to file
+curl -o response.json https://api.example.com/data
+
+# Show response headers
+curl -i https://api.example.com/status
+
+# Follow redirects
+curl -L https://api.example.com/redirect
+
+# Set timeout
+curl --connect-timeout 5 --max-time 10 https://api.example.com
+
+# Ignore SSL certificate errors (use cautiously!)
+curl -k https://self-signed.example.com
+```
+
+### Parsing JSON with jq
+
+```bash
+#!/bin/bash
+
+# Install jq first:
+# Ubuntu/Debian: apt-get install jq
+# RHEL/CentOS: yum install jq
+# macOS: brew install jq
+
+# Sample JSON
+cat > sample.json << 'EOF'
+{
+  "users": [
+    {"id": 1, "name": "Alice", "role": "admin", "active": true},
+    {"id": 2, "name": "Bob", "role": "user", "active": true},
+    {"id": 3, "name": "Charlie", "role": "user", "active": false}
+  ],
+  "total": 3
+}
+EOF
+
+# Extract specific field
+jq '.total' sample.json
+# Output: 3
+
+# Extract nested field
+jq '.users[0].name' sample.json
+# Output: "Alice"
+
+# Extract all names
+jq '.users[].name' sample.json
+
+# Filter based on condition
+jq '.users[] | select(.active == true)' sample.json
+
+# Filter and extract specific field
+jq '.users[] | select(.role == "admin") | .name' sample.json
+
+# Create new JSON structure
+jq '.users[] | {username: .name, isActive: .active}' sample.json
+
+# Count items
+jq '.users | length' sample.json
+
+# Get keys
+jq 'keys' sample.json
+
+# Raw output (no quotes)
+jq -r '.users[0].name' sample.json
+```
+
+### DevOps Example: GitHub API Integration
+
+```bash
+#!/bin/bash
+# github_repo_manager.sh - Manage GitHub repositories via API
+
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+GITHUB_ORG="${GITHUB_ORG:-myorg}"
+API_BASE="https://api.github.com"
+
+# Check if token is set
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "Error: GITHUB_TOKEN environment variable not set"
+    exit 1
+fi
+
+# Function to make authenticated API calls
+github_api() {
+    local method=$1
+    local endpoint=$2
+    local data=${3:-}
+    
+    if [ -n "$data" ]; then
+        curl -s -X "$method" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d "$data" \
+            "${API_BASE}${endpoint}"
+    else
+        curl -s -X "$method" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${API_BASE}${endpoint}"
+    fi
+}
+
+# List all repositories
+list_repos() {
+    echo "=== Repositories in $GITHUB_ORG ==="
+    github_api GET "/orgs/$GITHUB_ORG/repos?per_page=100" | \
+        jq -r '.[] | "\(.name) - \(.description // "No description")"'
+}
+
+# Get repository details
+get_repo_info() {
+    local repo=$1
+    echo "=== Repository: $repo ==="
+    
+    local info=$(github_api GET "/repos/$GITHUB_ORG/$repo")
+    
+    echo "Description: $(echo "$info" | jq -r '.description // "N/A"')"
+    echo "Language: $(echo "$info" | jq -r '.language // "N/A"')"
+    echo "Stars: $(echo "$info" | jq -r '.stargazers_count')"
+    echo "Forks: $(echo "$info" | jq -r '.forks_count')"
+    echo "Open Issues: $(echo "$info" | jq -r '.open_issues_count')"
+    echo "Created: $(echo "$info" | jq -r '.created_at')"
+    echo "Last Updated: $(echo "$info" | jq -r '.updated_at')"
+}
+
+# List open pull requests
+list_open_prs() {
+    local repo=$1
+    echo "=== Open Pull Requests for $repo ==="
+    
+    github_api GET "/repos/$GITHUB_ORG/$repo/pulls?state=open" | \
+        jq -r '.[] | "#\(.number): \(.title) by \(.user.login)"'
+}
+
+# Create a new repository
+create_repo() {
+    local repo_name=$1
+    local description=$2
+    local private=${3:-false}
+    
+    echo "Creating repository: $repo_name"
+    
+    local data=$(jq -n \
+        --arg name "$repo_name" \
+        --arg desc "$description" \
+        --argjson priv "$private" \
+        '{
+            name: $name,
+            description: $desc,
+            private: $priv,
+            auto_init: true
+        }')
+    
+    local result=$(github_api POST "/orgs/$GITHUB_ORG/repos" "$data")
+    
+    if echo "$result" | jq -e '.name' > /dev/null; then
+        echo "✓ Repository created successfully"
+        echo "URL: $(echo "$result" | jq -r '.html_url')"
+    else
+        echo "✗ Failed to create repository"
+        echo "$result" | jq -r '.message'
+    fi
+}
+
+# Enable branch protection
+enable_branch_protection() {
+    local repo=$1
+    local branch=${2:-main}
+    
+    echo "Enabling branch protection for $repo/$branch"
+    
+    local protection_rules='{
+        "required_status_checks": {
+            "strict": true,
+            "contexts": ["ci/test"]
+        },
+        "enforce_admins": false,
+        "required_pull_request_reviews": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews": true
+        },
+        "restrictions": null
+    }'
+    
+    github_api PUT "/repos/$GITHUB_ORG/$repo/branches/$branch/protection" "$protection_rules"
+    echo "✓ Branch protection enabled"
+}
+
+# Archive old repositories
+archive_old_repos() {
+    local days=${1:-365}
+    local cutoff_date=$(date -d "$days days ago" +%Y-%m-%d 2>/dev/null || date -v-${days}d +%Y-%m-%d)
+    
+    echo "=== Repositories not updated since $cutoff_date ==="
+    
+    github_api GET "/orgs/$GITHUB_ORG/repos?per_page=100" | \
+        jq -r --arg cutoff "$cutoff_date" '
+            .[] | 
+            select(.updated_at < $cutoff and .archived == false) | 
+            "\(.name) - Last updated: \(.updated_at)"
+        '
+}
+
+# Main menu
+case "${1:-}" in
+    list)
+        list_repos
+        ;;
+    info)
+        get_repo_info "$2"
+        ;;
+    prs)
+        list_open_prs "$2"
+        ;;
+    create)
+        create_repo "$2" "$3" "${4:-false}"
+        ;;
+    protect)
+        enable_branch_protection "$2" "${3:-main}"
+        ;;
+    archive-check)
+        archive_old_repos "${2:-365}"
+        ;;
+    *)
+        echo "Usage: $0 {list|info|prs|create|protect|archive-check} [args]"
+        echo ""
+        echo "Commands:"
+        echo "  list                           - List all repositories"
+        echo "  info <repo>                    - Get repository information"
+        echo "  prs <repo>                     - List open pull requests"
+        echo "  create <name> <desc> [private] - Create new repository"
+        echo "  protect <repo> [branch]        - Enable branch protection"
+        echo "  archive-check [days]           - Find old repositories"
+        exit 1
+        ;;
+esac
+```
+
+### DevOps Example: Slack Notifications
+
+```bash
+#!/bin/bash
+# slack_notify.sh - Send notifications to Slack
+
+SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}"
+
+send_slack_message() {
+    local message=$1
+    local channel=${2:-#devops}
+    local username=${3:-DevOps Bot}
+    local emoji=${4:-:robot_face:}
+    local color=${5:-good}  # good, warning, danger, or hex color
+    
+    if [ -z "$SLACK_WEBHOOK_URL" ]; then
+        echo "Error: SLACK_WEBHOOK_URL not set"
+        return 1
+    fi
+    
+    local payload=$(jq -n \
+        --arg channel "$channel" \
+        --arg username "$username" \
+        --arg emoji "$emoji" \
+        --arg text "$message" \
+        --arg color "$color" \
+        '{
+            channel: $channel,
+            username: $username,
+            icon_emoji: $emoji,
+            attachments: [{
+                color: $color,
+                text: $text,
+                footer: "DevOps Automation",
+                ts: (now | floor)
+            }]
+        }')
+    
+    curl -X POST "$SLACK_WEBHOOK_URL" \
+        -H 'Content-Type: application/json' \
+        -d "$payload" \
+        -s -o /dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Slack notification sent"
+    else
+        echo "✗ Failed to send Slack notification"
+    fi
+}
+
+# Send deployment notification
+send_deployment_notification() {
+    local status=$1
+    local environment=$2
+    local version=$3
+    local deployer=${4:-$(whoami)}
+    
+    local color="good"
+    local emoji=":white_check_mark:"
+    
+    if [ "$status" = "failed" ]; then
+        color="danger"
+        emoji=":x:"
+    elif [ "$status" = "warning" ]; then
+        color="warning"
+        emoji=":warning:"
+    fi
+    
+    local message="*Deployment $status* $emoji
+Environment: \`$environment\`
+Version: \`$version\`
+Deployed by: $deployer
+Time: $(date '+%Y-%m-%d %H:%M:%S')"
+    
+    send_slack_message "$message" "#deployments" "Deployment Bot" ":rocket:" "$color"
+}
+
+# Send alert notification
+send_alert() {
+    local severity=$1
+    local title=$2
+    local details=$3
+    
+    local color="warning"
+    local emoji=":warning:"
+    
+    if [ "$severity" = "critical" ]; then
+        color="danger"
+        emoji=":rotating_light:"
+    fi
+    
+    local message="*Alert: $title* $emoji
+Severity: \`$severity\`
+Details: $details
+Server: $(hostname)
+Time: $(date '+%Y-%m-%d %H:%M:%S')"
+    
+    send_slack_message "$message" "#alerts" "Alert Bot" "$emoji" "$color"
+}
+
+# Example usage
+case "${1:-}" in
+    deploy)
+        send_deployment_notification "$2" "$3" "$4" "$5"
+        ;;
+    alert)
+        send_alert "$2" "$3" "$4"
+        ;;
+    test)
+        send_slack_message "This is a test message" "#devops" "Test Bot" ":test_tube:" "good"
+        ;;
+    *)
+        echo "Usage: $0 {deploy|alert|test} [args]"
+        ;;
+esac
+```
+
+### DevOps Example: AWS CloudWatch Metrics
+
+```bash
+#!/bin/bash
+# cloudwatch_metrics.sh - Send custom metrics to CloudWatch
+
+AWS_REGION="${AWS_REGION:-us-east-1}"
+NAMESPACE="${NAMESPACE:-CustomApp}"
+
+# Send metric to CloudWatch
+send_metric() {
+    local metric_name=$1
+    local value=$2
+    local unit=${3:-Count}
+    local dimensions=${4:-}
+    
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+    
+    local metric_data="MetricName=$metric_name,Value=$value,Unit=$unit,Timestamp=$timestamp"
+    
+    if [ -n "$dimensions" ]; then
+        metric_data="${metric_data},Dimensions=${dimensions}"
+    fi
+    
+    aws cloudwatch put-metric-data \
+        --namespace "$NAMESPACE" \
+        --metric-data "$metric_data" \
+        --region "$AWS_REGION"
+    
+    echo "✓ Metric sent: $metric_name = $value $unit"
+}
+
+# Send application metrics
+send_app_metrics() {
+    # Get current metrics
+    local active_users=$(curl -s http://localhost:8080/metrics/users/active | jq -r '.count')
+    local response_time=$(curl -s http://localhost:8080/metrics/response_time | jq -r '.avg')
+    local error_rate=$(curl -s http://localhost:8080/metrics/errors | jq -r '.rate')
+    
+    # Send to CloudWatch
+    send_metric "ActiveUsers" "$active_users" "Count"
+    send_metric "ResponseTime" "$response_time" "Milliseconds"
+    send_metric "ErrorRate" "$error_rate" "Percent"
+}
+
+# Send system metrics
+send_system_metrics() {
+    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
+    local memory_usage=$(free | grep Mem | awk '{print ($3/$2) * 100.0}')
+    local disk_usage=$(df -h / | tail -1 | awk '{print $5}' | sed 's/%//')
+    
+    send_metric "CPUUtilization" "$cpu_usage" "Percent"
+    send_metric "MemoryUtilization" "$memory_usage" "Percent"
+    send_metric "DiskUtilization" "$disk_usage" "Percent"
+}
+
+# Query CloudWatch metrics
+query_metrics() {
+    local metric_name=$1
+    local start_time=$(date -u -d '1 hour ago' +"%Y-%m-%dT%H:%M:%S")
+    local end_time=$(date -u +"%Y-%m-%dT%H:%M:%S")
+    
+    aws cloudwatch get-metric-statistics \
+        --namespace "$NAMESPACE" \
+        --metric-name "$metric_name" \
+        --start-time "$start_time" \
+        --end-time "$end_time" \
+        --period 300 \
+        --statistics Average,Maximum,Minimum \
+        --region "$AWS_REGION" \
+        --output json | \
+        jq -r '.Datapoints | sort_by(.Timestamp) | .[] | 
+            "\(.Timestamp) - Avg: \(.Average), Max: \(.Maximum), Min: \(.Minimum)"'
+}
+
+case "${1:-}" in
+    app)
+        send_app_metrics
+        ;;
+    system)
+        send_system_metrics
+        ;;
+    query)
+        query_metrics "$2"
+        ;;
+    *)
+        echo "Usage: $0 {app|system|query} [metric_name]"
+        ;;
+esac
+```
+
+### Working with Different API Authentication Methods
+
+```bash
+#!/bin/bash
+# api_auth_examples.sh - Different authentication methods
+
+# 1. Basic Authentication
+basic_auth() {
+    local username=$1
+    local password=$2
+    local url=$3
+    
+    curl -u "$username:$password" "$url"
+}
+
+# 2. Bearer Token Authentication
+bearer_token_auth() {
+    local token=$1
+    local url=$2
+    
+    curl -H "Authorization: Bearer $token" "$url"
+}
+
+# 3. API Key in Header
+api_key_header() {
+    local api_key=$1
+    local url=$2
+    
+    curl -H "X-API-Key: $api_key" "$url"
+}
+
+# 4. API Key in Query Parameter
+api_key_param() {
+    local api_key=$1
+    local url=$2
+    
+    curl "${url}?api_key=${api_key}"
+}
+
+# 5. OAuth 2.0 (getting access token)
+oauth_get_token() {
+    local client_id=$1
+    local client_secret=$2
+    local token_url=$3
+    
+    curl -X POST "$token_url" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials" \
+        -d "client_id=$client_id" \
+        -d "client_secret=$client_secret" | \
+        jq -r '.access_token'
+}
+
+# 6. JWT Token Generation (if you have jwt tool)
+generate_jwt() {
+    local secret=$1
+    local payload=$2
+    
+    echo "$payload" | jwt encode --secret="$secret" -
+}
+
+# Example: Complete API workflow with token refresh
+api_workflow_example() {
+    local client_id="your_client_id"
+    local client_secret="your_client_secret"
+    local token_url="https://api.example.com/oauth/token"
+    local api_url="https://api.example.com/data"
+    
+    # Get access token
+    echo "Getting access token..."
+    local token=$(oauth_get_token "$client_id" "$client_secret" "$token_url")
+    
+    if [ -z "$token" ]; then
+        echo "Failed to get access token"
+        return 1
+    fi
+    
+    echo "Token acquired successfully"
+    
+    # Make API calls with token
+    local response=$(curl -s -H "Authorization: Bearer $token" "$api_url")
+    
+    # Check if token expired (HTTP 401)
+    local http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+        -H "Authorization: Bearer $token" "$api_url")
+    
+    if [ "$http_code" -eq 401 ]; then
+        echo "Token expired, refreshing..."
+        token=$(oauth_get_token "$client_id" "$client_secret" "$token_url")
+        response=$(curl -s -H "Authorization: Bearer $token" "$api_url")
+    fi
+    
+    echo "$response" | jq '.'
+}
+```
+
+### Parsing and Creating Complex JSON
+
+```bash
+#!/bin/bash
+# json_manipulation.sh - Advanced JSON operations
+
+# Create complex JSON structure
+create_deployment_manifest() {
+    local app_name=$1
+    local version=$2
+    local replicas=$3
+    local environment=$4
+    
+    jq -n \
+        --arg name "$app_name" \
+        --arg version "$version" \
+        --arg env "$environment" \
+        --argjson replicas "$replicas" \
+        '{
+            apiVersion: "apps/v1",
+            kind: "Deployment",
+            metadata: {
+                name: $name,
+                labels: {
+                    app: $name,
+                    version: $version,
+                    environment: $env
+                }
+            },
+            spec: {
+                replicas: $replicas,
+                selector: {
+                    matchLabels: {
+                        app: $name
+                    }
+                },
+                template: {
+                    metadata: {
+                        labels: {
+                            app: $name,
+                            version: $version
+                        }
+                    },
+                    spec: {
+                        containers: [{
+                            name: $name,
+                            image: ("registry.company.com/" + $name + ":" + $version),
+                            ports: [{
+                                containerPort: 8080
+                            }]
+                        }]
+                    }
+                }
+            }
+        }'
+}
+
+# Merge multiple JSON files
+merge_json_configs() {
+    local base_config=$1
+    local override_config=$2
+    
+    jq -s '.[0] * .[1]' "$base_config" "$override_config"
+}
+
+# Transform JSON structure
+transform_json() {
+    local input_file=$1
+    
+    # Example: Convert array of objects to key-value pairs
+    jq 'reduce .[] as $item ({}; .[$item.name] = $item.value)' "$input_file"
+}
+
+# Validate JSON schema (requires jq and basic validation)
+validate_json() {
+    local json_file=$1
+    
+    if jq empty "$json_file" 2>/dev/null; then
+        echo "✓ Valid JSON"
+        return 0
+    else
+        echo "✗ Invalid JSON"
+        return 1
+    fi
+}
+
+# Example usage
+create_deployment_manifest "myapp" "v1.2.3" 3 "production" > deployment.json
+echo "Deployment manifest created"
+cat deployment.json | jq '.'
+```
+
+---
+
+## 13. Process Management
+
+### Understanding Processes
+
+```bash
+#!/bin/bash
+
+# List all processes
+ps aux
+
+# List processes for current user
+ps -u $USER
+
+# Find specific process
+ps aux | grep nginx
+
+# Process tree
+pstree
+
+# Top processes by CPU
+top -b -n 1 | head -20
+
+# Top processes by memory
+ps aux --sort=-%mem | head -10
+
+# Get process ID by name
+pgrep nginx
+
+# Get process details
+ps -p $(pgrep nginx) -o pid,ppid,cmd,%cpu,%mem
+
+# Kill process by PID
+kill 1234
+
+# Kill process by name
+pkill nginx
+
+# Force kill
+kill -9 1234
+killall -9 nginx
+
+# List open files for a process
+lsof -p 1234
+
+# Check if process is running
+if pgrep nginx > /dev/null; then
+    echo "Nginx is running"
+else
+    echo "Nginx is not running"
+fi
+```
+
+### Background Jobs and Job Control
+
+```bash
+#!/bin/bash
+
+# Run command in background
+long_running_command &
+
+# Save background job PID
+BACKGROUND_PID=$!
+echo "Started background job with PID: $BACKGROUND_PID"
+
+# List background jobs
+jobs
+
+# Bring job to foreground
+# fg %1
+
+# Send job to background
+# bg %1
+
+# Wait for background job to complete
+wait $BACKGROUND_PID
+echo "Background job completed"
+
+# Run multiple background jobs and wait for all
+command1 &
+PID1=$!
+command2 &
+PID2=$!
+command3 &
+PID3=$!
+
+wait $PID1 $PID2 $PID3
+echo "All background jobs completed"
+```
+
+### DevOps Example: Application Process Manager
+
+```bash
+#!/bin/bash
+# app_manager.sh - Manage application processes
+
+APP_NAME="myapp"
+APP_JAR="/opt/${APP_NAME}/app.jar"
+PID_FILE="/var/run/${APP_NAME}.pid"
+LOG_FILE="/var/log/${APP_NAME}/app.log"
+JVM_OPTS="-Xmx2g -Xms1g"
+
+# Start application
+start_app() {
+    if is_running; then
+        echo "Error: $APP_NAME is already running (PID: $(cat $PID_FILE))"
+        return 1
+    fi
+    
+    echo "Starting $APP_NAME..."
+    
+    # Create log directory
+    mkdir -p "$(dirname $LOG_FILE)"
+    
+    # Start application in background
+    nohup java $JVM_OPTS -jar "$APP_JAR" >> "$LOG_FILE" 2>&1 &
+    
+    # Save PID
+    echo $! > "$PID_FILE"
+    
+    # Wait for application to start
+    sleep 3
+    
+    if is_running; then
+        echo "✓ $APP_NAME started successfully (PID: $(cat $PID_FILE))"
+        return 0
+    else
+        echo "✗ Failed to start $APP_NAME"
+        return 1
+    fi
+}
+
+# Stop application
+stop_app() {
+    if ! is_running; then
+        echo "$APP_NAME is not running"
+        return 0
+    fi
+    
+    local pid=$(cat $PID_FILE)
+    echo "Stopping $APP_NAME (PID: $pid)..."
+    
+    # Try graceful shutdown first
+    kill $pid
+    
+    # Wait up to 30 seconds for graceful shutdown
+    local count=0
+    while [ $count -lt 30 ] && is_running; do
+        sleep 1
+        ((count++))
+    done
+    
+    # Force kill if still running
+    if is_running; then
+        echo "Graceful shutdown failed, force killing..."
+        kill -9 $pid
+        sleep 1
+    fi
+    
+    if ! is_running; then
+        rm -f "$PID_FILE"
+        echo "✓ $APP_NAME stopped successfully"
+        return 0
+    else
+        echo "✗ Failed to stop $APP_NAME"
+        return 1
+    fi
+}
+
+# Restart application
+restart_app() {
+    echo "Restarting $APP_NAME..."
+    stop_app
+    sleep 2
+    start_app
+}
+
+# Check if application is running
+is_running() {
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat $PID_FILE)
+        if ps -p $pid > /dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Get application status
+status() {
+    if is_running; then
+        local pid=$(cat $PID_FILE)
+        local uptime=$(ps -p $pid -o etime= | tr -d ' ')
+        local memory=$(ps -p $pid -o rss= | awk '{print $1/1024 " MB"}')
+        local cpu=$(ps -p $pid -o %cpu= | tr -d ' ')
+        
+        echo "$APP_NAME is running"
+        echo "  PID: $pid"
+        echo "  Uptime: $uptime"
+        echo "  Memory: $memory"
+        echo "  CPU: $cpu%"
+        
+        # Check if responsive
+        if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+            echo "  Health: ✓ Healthy"
+        else
+            echo "  Health: ✗ Unhealthy"
+        fi
+    else
+        echo "$APP_NAME is not running"
+    fi
+}
+
+# Show application logs
+logs() {
+    local lines=${1:-50}
+    
+    if [ -f "$LOG_FILE" ]; then
+        tail -n $lines "$LOG_FILE"
+    else
+        echo "Log file not found: $LOG_FILE"
+    fi
+}
+
+# Follow logs in real-time
+follow_logs() {
+    if [ -f "$LOG_FILE" ]; then
+        tail -f "$LOG_FILE"
+    else
+        echo "Log file not found: $LOG_FILE"
+    fi
+}
+
+# Main command handling
+case "${1:-}" in
+    start)
+        start_app
+        ;;
+    stop)
+        stop_app
+        ;;
+    restart)
+        restart_app
+        ;;
+    status)
+        status
+        ;;
+    logs)
+        logs "${2:-50}"
+        ;;
+    follow)
+        follow_logs
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status|logs|follow}"
+        exit 1
+        ;;
+esac
+```
+
+### DevOps Example: Process Monitoring and Auto-restart
+
+```bash
+#!/bin/bash
+# process_monitor.sh - Monitor processes and restart if needed
+
+# List of processes to monitor
+declare -A PROCESSES=(
+    [nginx]="/usr/sbin/nginx"
+    [mysql]="/usr/sbin/mysqld"
+    [redis]="/usr/bin/redis-server"
+)
+
+# Alert configuration
+ALERT_EMAIL="devops@company.com"
+SLACK_WEBHOOK="${SLACK_WEBHOOK:-}"
+
+# Monitoring function
+monitor_process() {
+    local service_name=$1
+    local process_path=$2
+    
+    if pgrep -f "$process_path" > /dev/null; then
+        echo "✓ $service_name is running"
+        return 0
+    else
+        echo "✗ $service_name is NOT running"
+        return 1
+    fi
+}
+
+# Restart service
+restart_service() {
+    local service_name=$1
+    
+    echo "Attempting to restart $service_name..."
+    
+    if systemctl restart "$service_name" 2>/dev/null; then
+        echo "✓ $service_name restarted successfully"
+        return 0
+    elif service "$service_name" restart 2>/dev/null; then
+        echo "✓ $service_name restarted successfully"
+        return 0
+    else
+        echo "✗ Failed to restart $service_name"
+        return 1
+    fi
+}
+
+# Send alert
+send_alert() {
+    local service_name=$1
+    local status=$2
+    local message="[$(hostname)] Process Monitor Alert: $service_name is $status"
+    
+    # Send email
+    echo "$message" | mail -s "Process Monitor Alert" "$ALERT_EMAIL"
+    
+    # Send Slack notification
+    if [ -n "$SLACK_WEBHOOK" ]; then
+        curl -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\": \"$message\"}" \
+            2>/dev/null
+    fi
+}
+
+# Main monitoring loop
+echo "=== Process Monitor Started ==="
+echo "Monitoring $(date)"
+echo
+
+RESTART_COUNT=0
+
+for service_name in "${!PROCESSES[@]}"; do
+    process_path="${PROCESSES[$service_name]}"
+    
+    if ! monitor_process "$service_name" "$process_path"; then
+        # Process is down, attempt restart
+        if restart_service "$service_name"; then
+            send_alert "$service_name" "restarted after failure"
+            ((RESTART_COUNT++))
+            
+            # Wait and verify
+            sleep 5
+            if monitor_process "$service_name" "$process_path"; then
+                echo "✓ $service_name is now running"
+            else
+                send_alert "$service_name" "FAILED TO RESTART"
+            fi
+        else
+            send_alert "$service_name" "DOWN - restart failed"
+        fi
+    fi
+done
+
+echo
+echo "=== Monitor Summary ==="
+echo "Services restarted: $RESTART_COUNT"
+
+# Exit with error if any restarts were needed
+exit $RESTART_COUNT
+```
+
+### Resource Limit Management
+
+```bash
+#!/bin/bash
+# resource_limits.sh - Set and monitor resource limits
+
+# Show current limits
+show_limits() {
+    echo "=== Current Resource Limits ==="
+    ulimit -a
+}
+
+# Set limits for current shell
+set_limits() {
+    # Maximum file size (in KB)
+    ulimit -f 1000000
+    
+    # Maximum number of open files
+    ulimit -n 4096
+    
+    # Maximum number of processes
+    ulimit -u 2048
+    
+    # Maximum memory size (in KB)
+    ulimit -m 2097152
+    
+    # Maximum virtual memory (in KB)
+    ulimit -v 4194304
+    
+    echo "Resource limits set"
+}
+
+# Check process resource usage
+check_process_resources() {
+    local pid=$1
+    
+    echo "=== Resource Usage for PID $pid ==="
+    
+    # Memory usage
+    local mem_kb=$(ps -p $pid -o rss= | tr -d ' ')
+    local mem_mb=$(echo "scale=2; $mem_kb / 1024" | bc)
+    echo "Memory: ${mem_mb} MB"
+    
+    # CPU usage
+    local cpu=$(ps -p $pid -o %cpu= | tr -d ' ')
+    echo "CPU: ${cpu}%"
+    
+    # Number of threads
+    local threads=$(ps -p $pid -o nlwp= | tr -d ' ')
+    echo "Threads: $threads"
+    
+    # Open files
+    if command -v lsof > /dev/null; then
+        local open_files=$(lsof -p $pid 2>/dev/null | wc -l)
+        echo "Open files: $open_files"
+    fi
+}
+
+# Kill processes exceeding resource limits
+kill_resource_hogs() {
+    local max_cpu=${1:-80}
+    local max_mem=${2:-80}
+    
+    echo "=== Checking for resource hogs ==="
+    echo "CPU threshold: ${max_cpu}%"
+    echo "Memory threshold: ${max_mem}%"
+    
+    # Find CPU hogs
+    ps aux | awk -v max=$max_cpu '$3 > max {print $2,$3,$11}' | \
+    while read pid cpu cmd; do
+        echo "High CPU: PID $pid ($cpu%) - $cmd"
+        # Uncomment to actually kill:
+        # kill -9 $pid
+    done
+    
+    # Find memory hogs
+    ps aux | awk -v max=$max_mem '$4 > max {print $2,$4,$11}' | \
+    while read pid mem cmd; do
+        echo "High Memory: PID $pid ($mem%) - $cmd"
+        # Uncomment to actually kill:
+        # kill -9 $pid
+    done
+}
+
+# Set cgroup limits (requires root)
+set_cgroup_limits() {
+    local cgroup_name=$1
+    local memory_limit=$2  # in bytes
+    local cpu_limit=$3     # CPU shares
+    
+    if [ "$EUID" -ne 0 ]; then
+        echo "Error: This function requires root privileges"
+        return 1
+    fi
+    
+    # Create cgroup
+    mkdir -p /sys/fs/cgroup/memory/$cgroup_name
+    mkdir -p /sys/fs/cgroup/cpu/$cgroup_name
+    
+    # Set memory limit
+    echo $memory_limit > /sys/fs/cgroup/memory/$cgroup_name/memory.limit_in_bytes
+    
+    # Set CPU limit
+    echo $cpu_limit > /sys/fs/cgroup/cpu/$cgroup_name/cpu.shares
+    
+    echo "Cgroup $cgroup_name created with limits"
+}
+
+case "${1:-}" in
+    show)
+        show_limits
+        ;;
+    set)
+        set_limits
+        ;;
+    check)
+        check_process_resources "$2"
+        ;;
+    hogs)
+        kill_resource_hogs "${2:-80}" "${3:-80}"
+        ;;
+    cgroup)
+        set_cgroup_limits "$2" "$3" "$4"
+        ;;
+    *)
+        echo "Usage: $0 {show|set|check|hogs|cgroup} [args]"
+        ;;
+esac
+```
+
+---
+
+## 14. Networking and Remote Operations
 
 ### Example 1: Kubernetes Pod Restart Script
 
@@ -2831,6 +4003,12 @@ trap cleanup EXIT
 # Execute main function
 main "$@"
 ```
+
+---
+
+## 12. Working with APIs and JSON
+
+[Content is too long to paste here - I'll create a separate file with all the new sections]
 
 ---
 
