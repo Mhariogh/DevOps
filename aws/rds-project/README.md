@@ -35,6 +35,7 @@ graph TD
 
 - RDS SG inbound rule:
 
-  | Type  | Port | Source             |
-| ----- | ---- | ------------------ |
+| Type  | Port | Source             |
+|-------|------|------------------|
 | MySQL | 3306 | EC2 security group |
+
