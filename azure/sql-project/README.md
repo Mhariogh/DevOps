@@ -13,7 +13,7 @@ graph TD
 ```
 
 ## Steps
-1. Create Azure SQL
+### 1. Create Azure SQL
 
 - Service: Azure Database for MySQL Flexible Server
 
@@ -27,14 +27,14 @@ graph TD
 
 - VNet integration recommended
 
-2. Connect from VM
+### 2. Connect from VM
 
 - Install MySQL client:
 ```
 sudo apt install mysql-client -y
 ```
 
-Connect:
+### Connect:
 ```
 mysql -h <server>.mysql.database.azure.com -u admin -p
 ```
