@@ -37,6 +37,6 @@ graph TD
 
 - Security Group:
 
-   -- Allow SSH (22) from your IP
+     1. Allow SSH (22) from your IP
 
-Allow HTTP (80) from anywhere
+     2. Allow HTTP (80) from anywhere
