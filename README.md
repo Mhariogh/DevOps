@@ -17,3 +17,17 @@ This repo contains:
 ## 📁 Structure
 
 This repo contains step‑by‑step cloud onboarding…
+
+cloud-beginner-cloud-repo/
+│
+├── aws/
+│ ├── account-creation/
+│ ├── ec2-project/
+│ ├── autoscaling-project/
+│ └── rds-project/
+│
+└── azure/
+├── account-creation/
+├── vm-project/
+├── scale-set-project/
+└── sql-project/
