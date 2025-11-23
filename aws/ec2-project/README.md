@@ -51,3 +51,38 @@ sudo yum install httpd -y
 sudo systemctl enable httpd
 sudo systemctl start httpd
 ```
+
+## ✅ 4. Add Website Content
+```
+echo "<h1>Welcome to your first web server!</h1>" | sudo tee /var/www/html/index.html
+```
+
+- Open your EC2 public IP in a browser.
+
+## 🧹 Cleanup
+
+- Terminate the EC2 instance.
+
+
+---
+
+# `aws/autoscaling-project/README.md`
+
+```markdown
+# 🟧 AWS Auto Scaling + Load Balancer Project
+
+## 🎯 Goal
+Deploy a scalable web application using:
+- Launch Template  
+- Auto Scaling Group  
+- Application Load Balancer  
+
+---
+
+## 🧩 Architecture
+
+```mermaid
+graph TD
+    User --> ALB
+    ALB --> ASG
+    ASG --> EC2[EC2 Instances]
