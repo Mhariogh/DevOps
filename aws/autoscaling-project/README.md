@@ -1,9 +1,3 @@
-
----
-
-# `aws/autoscaling-project/README.md`
-
-```markdown
 # 🟧 AWS Auto Scaling + Load Balancer Project
 
 ## 🎯 Goal
@@ -21,3 +15,4 @@ graph TD
     User --> ALB
     ALB --> ASG
     ASG --> EC2[EC2 Instances]
+```
