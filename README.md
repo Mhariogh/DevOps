@@ -1,2 +1,3 @@
-# DevOps
-This repo will be used for all our devops projects
+# Beginner Cloud Projects Repo
+
+This repo contains step‑by‑step cloud onboarding…
