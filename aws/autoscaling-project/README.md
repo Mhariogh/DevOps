@@ -66,4 +66,4 @@ echo "<h1>Auto Scaling App</h1>" > /var/www/html/index.html
 
   Launch template
 
-ALB
+  ALB
