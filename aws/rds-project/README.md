@@ -46,4 +46,25 @@ graph TD
 | HTTPS   | 443  | 0.0.0.0/0         |
 
 
+## ✅ 3. Connect From EC2
+
+- Install MySQL client:
+```
+sudo yum install mariadb105 -y
+```
+
+- Connect:
+```
+mysql -h <RDS-ENDPOINT> -u admin -p
+```
+
+##🧹 Cleanup
+
+- Delete RDS instance
+
+- Delete EC2 instance
+
+- Delete security groups
+
+
 
