@@ -1,15 +1,3 @@
-# RDS Project
-
-```mermaid
-graph TD; App-->RDS;
-```
-
-
----
-
-
-
-
 # 🟧 AWS RDS Project — Connect EC2 to a Database
 
 ## 🎯 Goal
