@@ -40,3 +40,14 @@ graph TD
      1. Allow SSH (22) from your IP
 
      2. Allow HTTP (80) from anywhere
+
+## ✅ 3. Install Web Server
+
+- SSH into EC2:
+
+```
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl enable httpd
+sudo systemctl start httpd
+```
