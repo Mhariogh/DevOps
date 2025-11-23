@@ -12,7 +12,7 @@ Launch an EC2 instance, secure it, and deploy a simple website.
 graph TD
     User -->|HTTP/SSH| SG(Security Group)
     SG --> EC2[EC2 Instance: Amazon Linux 2]
-
+```
 
 # ✅ 1. Create a Key Pair
 
