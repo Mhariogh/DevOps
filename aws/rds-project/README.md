@@ -39,4 +39,11 @@ graph TD
 |-------|------|------------------|
 | MySQL | 3306 | EC2 security group |
 
+| Type    | Port | Source             |
+|---------|------|------------------|
+| MySQL   | 3306 | EC2 security group |
+| HTTP    | 80   | 0.0.0.0/0         |
+| HTTPS   | 443  | 0.0.0.0/0         |
+
+
 
