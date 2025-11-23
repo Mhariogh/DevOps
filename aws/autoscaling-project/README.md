@@ -1,4 +1,5 @@
-# Auto Scaling Project
+
+---
 
 # `aws/autoscaling-project/README.md`
 
@@ -20,4 +21,3 @@ graph TD
     User --> ALB
     ALB --> ASG
     ASG --> EC2[EC2 Instances]
-```
