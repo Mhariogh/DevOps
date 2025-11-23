@@ -12,3 +12,24 @@ graph TD
     User --> NSG
     NSG --> VM
 ```
+
+## ✅ 1. Create Resource Group
+```
+az group create --name bootcamp-rg --location eastus
+```
+
+## ✅ 2. Create VM
+
+- Using portal:
+
+    1. Ubuntu 22.04 LTS
+
+    2. Size: B1s
+
+    3. Authentication: SSH key
+
+- Open ports in NSG:
+
+   1. SSH 22
+
+   2. HTTP 80
