@@ -58,7 +58,7 @@ sudo yum install mariadb105 -y
 mysql -h <RDS-ENDPOINT> -u admin -p
 ```
 
-##🧹 Cleanup
+## 🧹 Cleanup
 
 - Delete RDS instance
 
