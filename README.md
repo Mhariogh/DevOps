@@ -1,4 +1,4 @@
-# Terraform Complete Guide: Zero to Hero 🚀
+# Terraform Complete Guide: Zero to Hero 
 
 A comprehensive guide to master Terraform from installation to advanced production-ready infrastructure.
 
@@ -266,3 +266,76 @@ resource "aws_instance" "web" {
 ```
 ### Step 8: Resource Dependencies
 Understanding implicit and explicit dependencies:
+```
+# Implicit dependency (Terraform detects automatically)
+resource "aws_eip" "ip" {
+  instance = aws_instance.web.id
+}
+
+# Explicit dependency (use depends_on)
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  
+  depends_on = [aws_s3_bucket.config]
+}
+```
+
+## Phase 4: Intermediate Concepts
+### Step 9: Modules
+Create reusable infrastructure components:
+`modules/webserver/main.tf`:
+```
+variable "instance_type" {
+  type = string
+}
+
+variable "ami_id" {
+  type = string
+}
+
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  
+  tags = {
+    Name = "WebServer"
+  }
+}
+
+output "instance_id" {
+  value = aws_instance.web.id
+}
+```
+
+Using the module:
+```
+module "webserver" {
+  source        = "./modules/webserver"
+  instance_type = "t2.micro"
+  ami_id        = data.aws_ami.amazon_linux.id
+}
+```
+
+### Step 10: State Management
+Understanding and managing Terraform state:
+
+```
+# View state
+terraform state list
+
+# Show specific resource
+terraform state show aws_instance.web
+
+# Move resource in state
+terraform state mv aws_instance.old aws_instance.new
+
+# Remove resource from state (doesn't destroy actual resource)
+terraform state rm aws_instance.web
+
+# Pull remote state
+terraform state pull
+
+# Push local state to remote
+terraform state push
+```
