@@ -356,3 +356,219 @@ terraform {
   }
 }
 ```
+### Step 11: Workspaces
+Manage multiple environments:
+```bash
+# Create new workspace
+terraform workspace new dev
+terraform workspace new staging
+terraform workspace new prod
+
+# List workspaces
+terraform workspace list
+
+# Switch workspace
+terraform workspace select dev
+
+# Show current workspace
+terraform workspace show
+```
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = terraform.workspace == "prod" ? "t3.large" : "t2.micro"
+  
+  tags = {
+    Environment = terraform.workspace
+  }
+}
+```
+
+## Phase 5: Advanced Concepts
+### Step 12: Dynamic Blocks
+Create repeatable nested blocks:
+
+```hcl
+variable "ingress_rules" {
+  type = list(object({
+    port        = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+}
+
+resource "aws_security_group" "web" {
+  name = "web-sg"
+  
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
+  }
+}
+```
+### Step 13: Provisioners
+Execute scripts on resources (use sparingly):
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  
+  # Run command on resource creation
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx"
+    ]
+    
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_rsa")
+      host        = self.public_ip
+    }
+  }
+  
+  # Run command on resource destruction
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'Instance ${self.id} is being destroyed'"
+  }
+}
+```
+
+### Step 14: For Expressions and Loops
+Advanced iteration techniques:
+```hcl
+# for_each with map
+resource "aws_s3_bucket" "buckets" {
+  for_each = {
+    dev  = "dev-bucket"
+    prod = "prod-bucket"
+  }
+  
+  bucket = "${each.value}-${each.key}"
+  
+  tags = {
+    Environment = each.key
+  }
+}
+
+# for expression
+locals {
+  uppercase_names = [for name in var.names : upper(name)]
+  
+  name_map = {
+    for idx, name in var.names : idx => name
+  }
+}
+```
+### Step 15: Conditional Expressions
+```hcl
+variable "environment" {
+  type = string
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = var.environment == "prod" ? "t3.large" : "t2.micro"
+  
+  count = var.environment == "prod" ? 3 : 1
+  
+  tags = {
+    Name = "web-${count.index}"
+  }
+}
+
+# Ternary operator
+locals {
+  bucket_name = var.custom_bucket_name != "" ? var.custom_bucket_name : "default-bucket"
+}
+```
+
+---
+
+## Phase 6: Best Practices & Production
+
+### Step 16: Project Structure
+
+Organize your Terraform code:
+```
+terraform-project/
+├── modules/
+│   ├── networking/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── compute/
+│   └── database/
+├── environments/
+│   ├── dev/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   ├── staging/
+│   └── prod/
+├── .gitignore
+└── README.md
+```
+
+**.gitignore:**
+```
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Sensitive files
+*.tfvars
+!example.tfvars
+
+# Override files
+override.tf
+override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+```
+
+### Step 17: Security Best Practices
+```hcl
+# Never hardcode secrets
+# Bad:
+resource "aws_db_instance" "db" {
+  password = "supersecret123"  # DON'T DO THIS
+}
+
+# Good: Use variables and external secret management
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+resource "aws_db_instance" "db" {
+  password = var.db_password
+}
+
+# Mark sensitive outputs
+output "db_password" {
+  value     = aws_db_instance.db.password
+  sensitive = true
+}
+
+# Use data sources for secrets
+data "aws_secretsmanager_secret_version" "db_password" {
+  secret_id = "prod/db/password"
+}
+```
