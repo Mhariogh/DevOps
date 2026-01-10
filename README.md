@@ -114,7 +114,7 @@ Configure VS Code Settings
     "editor.defaultFormatter": "hashicorp.terraform",
     "editor.formatOnSave": true
   }
-
+}
   ```
 ## Phase 2: Terraform Fundamentals
 ### Step 3: Understand Core Concepts
@@ -187,5 +187,82 @@ terraform show
 # List all resources in state
 terraform state list
 ```
+
+## Phase 3: Core Terraform Concepts
+### Step 6: Variables and Outputs
+`variables.tf`:
+```
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
 }
 
+variable "environment" {
+  description = "Environment name"
+  type        = string
+}
+
+variable "instance_count" {
+  description = "Number of instances"
+  type        = number
+  default     = 1
+}
+
+variable "tags" {
+  description = "Common tags"
+  type        = map(string)
+  default     = {}
+}
+
+```
+`outputs.tf:`
+```
+output "bucket_name" {
+  description = "Name of the S3 bucket"
+  value       = aws_s3_bucket.my_bucket.id
+}
+
+output "bucket_arn" {
+  description = "ARN of the S3 bucket"
+  value       = aws_s3_bucket.my_bucket.arn
+}
+```
+Using variables:
+```
+resource "aws_instance" "web" {
+  count         = var.instance_count
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  
+  tags = merge(
+    var.tags,
+    {
+      Name = "web-${count.index}"
+      Environment = var.environment
+    }
+  )
+}
+```
+### Step 7: Data Sources
+Learn to query existing infrastructure:
+```
+# Get latest Amazon Linux AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+  
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# Use the data source
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"
+}
+```
+### Step 8: Resource Dependencies
+Understanding implicit and explicit dependencies:
