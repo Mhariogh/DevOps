@@ -116,5 +116,76 @@ Configure VS Code Settings
   }
 
   ```
+## Phase 2: Terraform Fundamentals
+### Step 3: Understand Core Concepts
+Learn these fundamental concepts:
+
+Infrastructure as Code (IaC): Managing infrastructure through code rather than manual processes
+Declarative vs Imperative: Terraform is declarative (you define what you want, not how to get there)
+Provider: Plugins that allow Terraform to interact with cloud platforms, SaaS providers, and APIs
+Resource: Components of your infrastructure (EC2 instances, S3 buckets, etc.)
+State: Terraform tracks the current state of your infrastructure in a state file
+
+### Step 4: Your First Terraform Configuration
+Create a project folder and a file named `main.tf`:
+```
+# Configure the provider (AWS example)
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Create a simple S3 bucket
+resource "aws_s3_bucket" "my_first_bucket" {
+  bucket = "my-unique-terraform-bucket-12345"
+  
+  tags = {
+    Name        = "My First Bucket"
+    Environment = "Learning"
+  }
+}
+```
+### Step 5: Master the Terraform Workflow
+Learn and practice these essential commands:
+```
+# Initialize the working directory (downloads provider plugins)
+terraform init
+```
+
+```
+# Preview changes before applying
+terraform plan
+```
+```
+# Apply changes to create/update infrastructure
+terraform apply
+```
+```
+# Destroy all resources defined in your configuration
+terraform destroy
+```
+```
+# Format your code to canonical style
+terraform fmt
+```
+```
+
+# Validate configuration syntax
+terraform validate
+
+# Show current state
+terraform show
+
+# List all resources in state
+terraform state list
+```
 }
 
