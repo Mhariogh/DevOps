@@ -323,19 +323,24 @@ Understanding and managing Terraform state:
 ```
 # View state
 terraform state list
-
+```
+```
 # Show specific resource
 terraform state show aws_instance.web
-
+```
+```
 # Move resource in state
 terraform state mv aws_instance.old aws_instance.new
-
+```
+```
 # Remove resource from state (doesn't destroy actual resource)
 terraform state rm aws_instance.web
-
+```
+```
 # Pull remote state
 terraform state pull
-
+```
+```
 # Push local state to remote
 terraform state push
 ```
