@@ -35,12 +35,12 @@ A comprehensive guide to master Terraform from installation to advanced producti
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 ```
 ##### Install Terraform
-```
+```powershell
 choco install terraform
 ```
 
 ##### Verify installation
-```
+```hcl
 terraform version
 ```
 
@@ -59,7 +59,7 @@ brew install hashicorp/tap/terraform
 ```
 
 ##### Verify installation
-```
+```hcl
 terraform version
 ```
 
@@ -78,7 +78,7 @@ sudo apt update && sudo apt install terraform
 
 #### Download and Install VS Code
 
-```
+```powershell
 # Windows: Open powershell as administrative user
 choco install vscode -y
 ```
@@ -128,7 +128,7 @@ Learn these fundamental concepts:
 
 ### Step 4: Your First Terraform Configuration
 Create a project folder and a file named `main.tf`:
-```
+```hcl
 # Configure the provider (AWS example)
 terraform {
   required_providers {
@@ -155,28 +155,28 @@ resource "aws_s3_bucket" "my_first_bucket" {
 ```
 ### Step 5: Master the Terraform Workflow
 Learn and practice these essential commands:
-```
+```hcl
 # Initialize the working directory (downloads provider plugins)
 terraform init
 ```
 
-```
+```hcl
 # Preview changes before applying
 terraform plan
 ```
-```
+```hcl
 # Apply changes to create/update infrastructure
 terraform apply
 ```
-```
+```hcl
 # Destroy all resources defined in your configuration
 terraform destroy
 ```
-```
+```hcl
 # Format your code to canonical style
 terraform fmt
 ```
-```
+```hcl
 
 # Validate configuration syntax
 terraform validate
@@ -191,7 +191,7 @@ terraform state list
 ## Phase 3: Core Terraform Concepts
 ### Step 6: Variables and Outputs
 `variables.tf`:
-```
+```hcl
 variable "region" {
   description = "AWS region"
   type        = string
