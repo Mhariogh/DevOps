@@ -120,11 +120,11 @@ Configure VS Code Settings
 ### Step 3: Understand Core Concepts
 Learn these fundamental concepts:
 
-Infrastructure as Code (IaC): Managing infrastructure through code rather than manual processes
-Declarative vs Imperative: Terraform is declarative (you define what you want, not how to get there)
-Provider: Plugins that allow Terraform to interact with cloud platforms, SaaS providers, and APIs
-Resource: Components of your infrastructure (EC2 instances, S3 buckets, etc.)
-State: Terraform tracks the current state of your infrastructure in a state file
+- Infrastructure as Code (IaC): Managing infrastructure through code rather than manual processes
+- Declarative vs Imperative: Terraform is declarative (you define what you want, not how to get there)
+- Provider: Plugins that allow Terraform to interact with cloud platforms, SaaS providers, and APIs
+- Resource: Components of your infrastructure (EC2 instances, S3 buckets, etc.)
+- State: Terraform tracks the current state of your infrastructure in a state file
 
 ### Step 4: Your First Terraform Configuration
 Create a project folder and a file named `main.tf`:
