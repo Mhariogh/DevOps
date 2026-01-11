@@ -572,3 +572,101 @@ data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = "prod/db/password"
 }
 ```
+### Step 18: Testing Strategies
+```bash
+# Validate syntax
+terraform validate
+
+# Check formatting
+terraform fmt -check -recursive
+
+# Security scanning (use tools like tfsec)
+# Install: brew install tfsec (Mac) or choco install tfsec (Windows)
+tfsec .
+
+# Compliance checking (use tools like checkov)
+pip install checkov
+checkov -d .
+
+# Plan and review
+terraform plan -out=tfplan
+
+# Cost estimation (use Infracost)
+# Install: brew install infracost (Mac) or choco install infracost (Windows)
+infracost breakdown --path .
+```
+
+### Step 19: CI/CD Integration
+Example GitHub Actions workflow:
+
+```yaml
+name: Terraform
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        
+      - name: Terraform Format
+        run: terraform fmt -check
+        
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Terraform Validate
+        run: terraform validate
+        
+      - name: Terraform Plan
+        run: terraform plan
+```
+
+### Step 20: Advanced State Management
+```hcl
+# Import existing resources
+# terraform import aws_instance.web i-1234567890abcdef0
+
+# Taint resources (mark for recreation)
+terraform taint aws_instance.web
+
+# Untaint resources
+terraform untaint aws_instance.web
+
+# Refresh state (sync with actual infrastructure)
+terraform refresh
+
+# Replace specific resource
+terraform apply -replace="aws_instance.web"
+```
+
+## Phase 7: Practice Projects
+
+#### Project 1: Simple Web Server
+Create an EC2 instance with a web server, security group, and elastic IP.
+
+#### Project 2: Multi-Tier Architecture
+Build a VPC with public/private subnets, load balancer, auto-scaling group, and RDS database.
+
+#### Project 3: Modular Infrastructure
+Create reusable modules for networking, compute, and storage. Use them across multiple environments.
+
+#### Project 4: Complete CI/CD Pipeline
+Set up infrastructure for a CI/CD pipeline including version control, build servers, and deployment targets.
+
+
+## Additional Resources
+
+- Official Documentation: https://www.terraform.io/docs
+- Terraform Registry: https://registry.terraform.io (find providers and modules)
+- HashiCorp Learn: https://learn.hashicorp.com/terraform
+- Terraform Best Practices: https://www.terraform-best-practices.com
+- Community: Join Terraform community forums and Discord servers
+
