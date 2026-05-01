@@ -37,7 +37,8 @@ pipeline {
                             -Dsonar.projectName=three-tier-backend \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=\$SONAR_HOST_URL \
-                            -Dsonar.token=\$SONAR_AUTH_TOKEN
+                            -Dsonar.token=\$SONAR_AUTH_TOKEN \
+                            -Dsonar.scanner.skipJreProvisioning=true
                         """
                     }
                 }
