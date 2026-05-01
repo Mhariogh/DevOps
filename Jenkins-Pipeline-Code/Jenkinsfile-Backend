@@ -1,121 +1,141 @@
 pipeline {
     agent any 
+
     tools {
-        jdk 'jdk'  // Ensure this label is correct in your Global Tool Configuration
-        nodejs 'nodejs'     // Ensure this label is correct and Maven is installed in Global Tool Configuration
+        jdk 'jdk'
+        nodejs 'nodejs'
     }
-    environment  {
-        // Define scanner home directly if using a global tool configuration for SonarScanner
+
+    environment {
         SCANNER_HOME = "${tool 'sonar-scanner'}"
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_ECR_REPO_NAME = credentials('ECR_REPO2')
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
     }
+
     stages {
+
         stage('Cleaning Workspace') {
             steps {
                 cleanWs()
             }
         }
+
         stage('Checkout from Git') {
             steps {
-                // Assuming Git credentials and repository are correctly setup
-                git branch: 'e2e-3-tier-DevSecOps', credentialsId: 'github-token', url: 'https://github.com/techlearn-center/DevOps.git'
+                git branch: 'e2e-3-tier-DevSecOps',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/techlearn-center/DevOps.git'
             }
         }
-        stage('Sonarqube Analysis') {
+
+        stage('SonarQube Analysis') {
             steps {
                 dir('Application-Code/backend') {
                     withSonarQubeEnv('sonar-server') {
-                        sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=three-tier-backend -Dsonar.projectName=three-tier-backend"
+                        sh """
+                            ${SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=three-tier-backend \
+                            -Dsonar.projectName=three-tier-backend \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=\$SONAR_HOST_URL \
+                            -Dsonar.token=\$SONAR_AUTH_TOKEN
+                        """
                     }
                 }
             }
         }
+
         stage('Quality Gate') {
             steps {
                 script {
-                    // Ensure SonarQube integration is properly configured to use this step
                     waitForQualityGate abortPipeline: false, credentialsId: 'sonar'
                 }
             }
         }
+
         stage('OWASP Dependency-Check Scan') {
             steps {
                 dir('Application-Code/backend') {
-                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                    dependencyCheck(
+                        additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit',
+                        odcInstallation: 'DP-Check'
+                    )
                     dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                 }
             }
         }
-         stage('Trivy File Scan') {
+
+        stage('Trivy File Scan') {
             steps {
                 dir('Application-Code/backend') {
                     sh 'trivy fs . > trivyfs.txt'
                 }
             }
         }
-        stage("Docker Image Build") {
+
+        stage('Docker Image Build') {
             steps {
-                script {
-                    dir('Application-Code/backend') {
-                            sh 'docker system prune -f'
-                            sh 'docker container prune -f'
-                            sh 'docker build -t ${AWS_ECR_REPO_NAME} .'
-                    }
+                dir('Application-Code/backend') {
+                    sh 'docker system prune -f'
+                    sh 'docker container prune -f'
+                    sh 'docker build -t ${AWS_ECR_REPO_NAME} .'
                 }
             }
         }
-        stage("ECR Image Pushing") {
+
+        stage('ECR Image Pushing') {
             steps {
-                script {
-                        sh 'aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}'
-                        sh 'docker tag ${AWS_ECR_REPO_NAME} ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
-                        sh 'docker push ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
-                }
+                sh 'aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}'
+                sh 'docker tag ${AWS_ECR_REPO_NAME} ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
+                sh 'docker push ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
             }
         }
-        stage("TRIVY Image Scan") {
+
+        stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER} > trivyimage.txt' 
+                sh 'trivy image ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER} > trivyimage.txt'
             }
         }
+
         stage('Checkout Code') {
             steps {
-                 git branch: 'e2e-3-tier-DevSecOps', credentialsId: 'github-token', url: 'https://github.com/techlearn-center/DevOps.git'
+                git branch: 'e2e-3-tier-DevSecOps',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/techlearn-center/DevOps.git'
             }
         }
+
         stage('Update Kubernetes Deployment') {
-             environment {
+            environment {
                 GIT_REPO_NAME = "DevOps"
                 GIT_USER_NAME = "techlearn-center"
             }
             steps {
-                script {
-                    dir('Kubernetes-Manifests-file/Backend') {
-                        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-                            sh '''
-                                git config user.email "techlearn-center@gmail.com"
-                                git config user.name "techlearn-center"
-                                BUILD_NUMBER=${BUILD_NUMBER}
-                                echo $BUILD_NUMBER
-                                imageTag=$(grep -oP '(?<=backend:)[^ ]+' deployment.yaml)
-                                echo $imageTag
-                                sed -i "s/${AWS_ECR_REPO_NAME}:${imageTag}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}/" deployment.yaml
-                                git add deployment.yaml
-                                git commit -m "Update deployment Image to version \${BUILD_NUMBER}"
-                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:e2e-3-tier-DevSecOps
-                            '''
-                        }
+                dir('Kubernetes-Manifests-file/Backend') {
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                        sh '''
+                            git config user.email "techlearn-center@gmail.com"
+                            git config user.name "techlearn-center"
+                            BUILD_NUMBER=${BUILD_NUMBER}
+                            echo $BUILD_NUMBER
+                            imageTag=$(grep -oP '(?<=backend:)[^ ]+' deployment.yaml)
+                            echo $imageTag
+                            sed -i "s/${AWS_ECR_REPO_NAME}:${imageTag}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}/" deployment.yaml
+                            git add deployment.yaml
+                            git commit -m "Update deployment Image to version ${BUILD_NUMBER}"
+                            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:e2e-3-tier-DevSecOps
+                        '''
                     }
                 }
             }
         }
     }
+
     post {
         always {
-            cleanWs()  // Clean workspace after the pipeline runs
+            cleanWs()
         }
     }
 }
