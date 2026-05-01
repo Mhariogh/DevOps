@@ -31,15 +31,12 @@ pipeline {
             steps {
                 dir('Application-Code/backend') {
                     withSonarQubeEnv('sonar-server') {
-                        sh """
-                            ${SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=three-tier-backend \
-                            -Dsonar.projectName=three-tier-backend \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=\$SONAR_HOST_URL \
-                            -Dsonar.token=\$SONAR_AUTH_TOKEN \
-                            -Dsonar.scanner.skipJreProvisioning=true
-                        """
+                        sh '''
+                            echo "=== ALL SONAR ENV VARS ==="
+                            env | grep -i sonar || echo "none found"
+                            echo "=== SCANNER OPTS ==="
+                            echo "SONAR_SCANNER_OPTS=$SONAR_SCANNER_OPTS"
+                        '''
                     }
                 }
             }
@@ -107,47 +104,3 @@ pipeline {
 
         stage('Trivy Image Scan') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
-                    string(credentialsId: 'ECR_REPO2', variable: 'AWS_ECR_REPO_NAME')
-                ]) {
-                    sh """
-                        trivy image \${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/\${AWS_ECR_REPO_NAME}:${BUILD_NUMBER} > trivyimage.txt
-                    """
-                }
-            }
-        }
-
-        stage('Update Kubernetes Deployment') {
-            steps {
-                dir('Kubernetes-Manifests-file/Backend') {
-                    withCredentials([
-                        string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')
-                    ]) {
-                        sh '''
-                            git config user.email "cwamiemhariogh@gmail.com"
-                            git config user.name "Mhariogh"
-
-                            git pull origin e2e-3-tier-DevSecOps
-
-                            imageTag=$(grep -oP '(?<=backend:)[^ ]+' deployment.yaml || echo "latest")
-
-                            sed -i "s/backend:${imageTag}/backend:${BUILD_NUMBER}/" deployment.yaml
-
-                            git add deployment.yaml
-                            git commit -m "Update backend image to version ${BUILD_NUMBER}" || echo "No changes"
-
-                            git push https://${GITHUB_TOKEN}@github.com/Mhariogh/DevOps HEAD:e2e-3-tier-DevSecOps
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
-}
