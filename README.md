@@ -229,7 +229,7 @@ terraform --version
 
 ```bash
 # Clone the repo
-git clone --branch e2e-3-tier-DevSecOps https://github.com/techlearn-center/DevOps.git e2e-3-tier-DevSecOps
+git clone --branch e2e-3-tier-DevSecOps https://github.com/Mhariogh/DevOps.git e2e-3-tier-DevSecOps
 
 cd e2e-3-tier-DevSecOps/Jenkins-Server-TF
 ```
